@@ -1,7 +1,7 @@
 ---
 title: "p8105_hw2_fx2184"
 author: "Fei"
-date: "2022-09-29"
+date: "2022-10-04"
 output: github_document
 ---
 
@@ -34,7 +34,7 @@ skimr::skim(subway)
 # How many distinct stations are there? 
 distinct_stations = distinct(subway, line, station_name, .keep_all = TRUE)
 # How many stations are ADA compliant?
-ada = distinct(subway, line, station_name, .keep_all = TRUE) %>%  count(ada)
+ada = distinct(subway, line, station_name, .keep_all = TRUE) %>%  filter(ada)
 # What proportion of station entrances / exits without vending allow entrance?
 proportion = nrow(filter(subway, vending == "NO", entry == "TRUE"))/nrow(filter(subway, vending == "NO"))
 show(proportion)
@@ -46,57 +46,69 @@ subway_wide = subway %>%
          route11 = as.character(route11)) %>%
   pivot_longer(route1:route11, names_to = "route_number", values_to = "route_name")
 
-distinct_A = distinct(subway_wide, line, station_name, .keep_all = TRUE) %>% count(route_name == "A")
+distinct_A = distinct(subway_wide, line, station_name, .keep_all = TRUE) %>% filter(route_name == "A" )
 
 # Of the stations that serve the A train, how many are ADA compliant?
-distinct_A_ada = distinct(subway_wide, line, station_name, .keep_all = TRUE) %>% count(ada & route_name == "A")
+distinct_A_ada = distinct(subway_wide, line, station_name, .keep_all = TRUE) %>% filter(ada & route_name == "A")
 
 ```
 * Answer: there are `r nrow(distinct_stations)` distinct stations in this dataset.
-* Answer: There are 84 stations are ADA compliant, and 381 stations are not ADA compliant. 
-* Answer: The proportion of station entrances / exits without vending allow entrance is `proportion`.
-* Answer: there are 60 distinct station serve the A train. 
-* Answer: there are 17 distinct station serve A train and ada compliant. 
+* Answer: There are `r ada %>%  nrow()` stations are ADA compliant. 
+* Answer: The proportion of station entrances / exits without vending allow entrance is `r proportion`.
+* Answer: there are `r distinct_A %>% nrow()`distinct station serve the A train. 
+* Answer: there are `r distinct_A_ada %>% nrow()` distinct station serve A train and ada compliant. 
 
 
 # Problem 2 
+Read and clean the Mr. Trash Wheel sheet:
+
+specify the sheet in the Excel file and to omit non-data entries (rows with notes / figures; columns containing notes) using arguments in read_excel
+use reasonable variable names
+omit rows that do not include dumpster-specific data
+round the number of sports balls to the nearest integer and converts the result to an integer variable (using as.integer)
+Use a similar process to import, clean, and organize the data for Professor Trash Wheel, and combine this with the Mr. Trash Wheel dataset to produce a single tidy dataset. To keep track of which Trash Wheel is which, you may need to add an additional variable to both datasets before combining.
+
+Write a paragraph about these data; you are encouraged to use inline R. Be sure to note the number of observations in the resulting dataset, and give examples of key variables. For available data, what was the total weight of trash collected by Professor Trash Wheel? What was the total number of sports balls collected by Mr. Trash Wheel in 2020?
+
+
 
 ## Mr. Trash Wheel dataset
 
 ```{r}
-Mr_Trash_Wheel = read_excel("~/Desktop/p8105_hw2_fx2184/Trash-Wheel-Collection-Totals-7-2020-2.xlsx",
-                         sheet = "Mr. Trash Wheel") %>% 
+Mr_Trash_Wheel =read_excel("Trash Wheel Collection Data.xlsx", 
+    sheet = "Mr. Trash Wheel") %>% 
     janitor:: clean_names() %>% 
-    select(-x15,-x16,-x17) %>%
     filter(dumpster !='Grand Total') %>% 
     drop_na(dumpster) %>% 
     rename("weight(tons)" = "weight_tons", "volume(cubic yards)" = "volume_cubic_yards") %>% 
     mutate(
-      sports_balls = as.integer(round(sports_balls,0)))
+      sports_balls = as.integer(round(sports_balls,0))) %>% 
+    select(-x15, -x16)
 ```
 
 ## Professor Trash Wheel
 
 ```{r}
-Pro_Trash_Wheel = read_excel("~/Desktop/p8105_hw2_fx2184/Trash-Wheel-Collection-Totals-7-2020-2.xlsx",
+Pro_Trash_Wheel = read_excel("Trash Wheel Collection Data.xlsx",
                          sheet = "Professor Trash Wheel") %>% 
     janitor:: clean_names() %>% 
     drop_na(dumpster) %>% 
-    mutate(sports_balls = as.integer(round(sports_balls,0)),
-           Trash_wheel = c('Pro') )%>% 
-  #add a new column called Trash_wheel in order to merge two datasets in the next step
     rename("weight(tons)" = "weight_tons", "volume(cubic yards)" = "volume_cubic_yards") 
-
 ```
 
 ## Merge Mr and Professor Trash Wheel 
 
 ```{r}
 # add a new column Trash_wheel in Mr Trash Wheel in order to merge two datasets.
-Mr_Trash_Wheel = mutate(Mr_Trash_Wheel, Trash_wheel = c('Mr'))
-Pro_Trash_Wheel = mutate(Pro_Trash_Wheel,dumpster = as.character(dumpster))
-# 
-Mr_and_Pro = Pro_Trash_Wheel %>% full_join(Mr_Trash_Wheel)
+Mr_Trash_Wheel = mutate(Mr_Trash_Wheel, Trash_wheel = c('Mr'),
+                        dumpster = as.character(dumpster))
+Pro_Trash_Wheel = mutate(Pro_Trash_Wheel,dumpster = as.character(dumpster),
+                         year = as.character(year),
+                         Trash_wheel = c('Pro'))
+
+
+# merge the two datasets 
+Mr_and_Pro = Mr_Trash_Wheel %>% full_join(Pro_Trash_Wheel)
 
 #sum values in column weight(tons) where Trash_wheel is equal to 'Pro'
 total_weight = sum(Mr_and_Pro[which(Mr_and_Pro$Trash_wheel=='Pro'), "weight(tons)"])
@@ -112,7 +124,7 @@ total_balls = sum(Mr_and_Pro[which(Mr_and_Pro$Trash_wheel=='Mr'& Mr_and_Pro$year
 
 * The total number of sports balls collected by Mr. Trash Wheel in 2020 is  `r total_balls`. 
 
-# Problem 3 （fivethirtyeight datasets) 
+# Problem 3 （Fivethirtyeight datasets) 
 
 # Dataset: pols-month 
 
@@ -126,42 +138,42 @@ pols_month = pols_month %>%
          day = as.integer(format(mon, format = "%d"))) %>% 
   mutate(month = month.abb[month]) %>% 
   mutate(president = ifelse(prez_gop == "0", "dem","gop")) %>% 
-  select(-prez_dem, -prez_gop,-mon)
+  select(-prez_dem, -prez_gop,-day)
 ```
 
 # Dataset: snp dataset
 
 ```{r}
-snp = read.csv("~/Desktop/p8105_hw2_fx2184/fivethirtyeight_datasets/snp.csv") 
-snp = snp %>% 
-  janitor:: clean_names() %>%
-  mutate(snp, date = as.Date(date)) %>% 
-  mutate(month = as.integer(format(date, format = "%Y")),
-         day = as.integer(format(date, format = "%m")),
-         year = as.integer(format(date, format = "%d"))) %>% 
+snp = read.csv("~/Desktop/p8105_hw2_fx2184/fivethirtyeight_datasets/snp.csv")  %>% 
+    janitor::clean_names() %>% 
+  mutate(date = lubridate::parse_date_time2(date,orders ="mdy", cutoff_2000 = 23)) %>% 
+  separate(date, c("year","month","day")) %>%
+  mutate(year = as.integer(year), 
+         month = as.integer(month), 
+         day = as.integer(day))%>%
   mutate(month = month.abb[month]) %>% 
-  arrange(desc(year),desc(month)) %>% 
-  select(year, month, day,close,-date)
-
+  arrange(year,month) %>% 
+  select(-day)
 ```
 
 #  Merge 
 
 ```{r}
+# import the unemployment dataset 
 unemployment = read.csv("~/Desktop/p8105_hw2_fx2184/fivethirtyeight_datasets/unemployment.csv") %>% 
   pivot_longer(Jan:Dec, names_to = "month", values_to = "unemployment_rate") %>% 
   janitor:: clean_names()
- # mutate(unemployment, month = as.integer(month))
-pols_snp = pols_month %>% left_join(snp,Joining, by = c("year", "month", "day"))
+# merge 
+pols_snp = pols_month %>% left_join(snp,Joining, by = c("year", "month"))
 merge = pols_snp %>% left_join(unemployment,by = c("year", "month"))
 ```
 
-* The `pols_month` dataset has `r nrow(pols_month)`observations with `r ncol(pols_month)` variables: ` r names(pols_month)`. The range of year is [`r pols_month %>%  pull (year) %>% range()`].
+* The `pols_month` dataset has `r nrow(pols_month)`observations with `r ncol(pols_month)` variables: `r names(pols_month)`. The range of year is [`r pols_month %>% pull(year) %>% range()`].
 
-* The `snp` dataset has has `r nrow(snp)`observations with `r ncol(snp)` variables: ` r names(snp)`. The range of year is [`r snp %>%  pull (year) %>% range()`].
+* The `snp` dataset has has `r nrow(snp)`observations with `r ncol(snp)` variables: `r names(snp)`. The range of year is [`r snp%>%pull (year) %>% range()`].
 
-* The `unemployment` dataset has has `r nrow(unemployment)`observations with `r ncol(unemployment)` variables: ` r names(unemployment)`. The range of year is [`r unemployment %>%  pull (year) %>% range()`].
+* The `unemployment` dataset has has `r nrow(unemployment)`observations with `r ncol(unemployment)` variables: `r names(unemployment)`. The range of year is [`r unemployment%>%pull(year) %>% range()`].
 
-* First, using the left join to merge the snp dataset into pols_month, the new dataset has `r nrow(pols_snp)`observations and `r ncol(pols_snp)`variables,they are ` r names(pols_snp)`. The range of year is [`r pols_snp %>% pull(year) %>% range()`]. Then, merging the `unemployment` dataset to `pols_snp`, It contains `r nrow(merge)`observations and `r ncol(merge)` variables:` r names(merge)`. The range of year is [`r merge %>% pull(year) %>% range()`].
+* First, using the left join to merge the snp dataset into pols_month, the new dataset has `r nrow(pols_snp)`observations and `r ncol(pols_snp)`variables,they are `r names(pols_snp)`. The range of year is [`r pols_snp %>% pull(year) %>% range()`]. Then, merging the `unemployment` dataset to `pols_snp`, It contains `r nrow(merge)`observations and `r ncol(merge)` variables:`r names(merge)`. The range of year is [`r merge %>% pull(year) %>% range()`].
 
 

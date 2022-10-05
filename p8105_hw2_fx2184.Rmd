@@ -75,14 +75,13 @@ Write a paragraph about these data; you are encouraged to use inline R. Be sure 
 ## Mr. Trash Wheel dataset
 
 ```{r}
-Mr_Trash_Wheel =read_excel("Trash Wheel Collection Data.xlsx", 
+Mr_Trash_Wheel = read_excel("Trash Wheel Collection Data.xlsx", 
     sheet = "Mr. Trash Wheel") %>% 
     janitor:: clean_names() %>% 
     filter(dumpster !='Grand Total') %>% 
     drop_na(dumpster) %>% 
     rename("weight(tons)" = "weight_tons", "volume(cubic yards)" = "volume_cubic_yards") %>% 
-    mutate(
-      sports_balls = as.integer(round(sports_balls,0))) %>% 
+    mutate(sports_balls = as.integer(round(sports_balls,0))) %>% 
     select(-x15, -x16)
 ```
 
@@ -117,8 +116,11 @@ total_weight = sum(Mr_and_Pro[which(Mr_and_Pro$Trash_wheel=='Pro'), "weight(tons
 total_balls = sum(Mr_and_Pro[which(Mr_and_Pro$Trash_wheel=='Mr'& Mr_and_Pro$year == '2020'), "sports_balls"])
 
 ```
+* `Mr_Trash_Wheel` has `r nrow(Mr_Trash_Wheel)` observations and `r ncol(Mr_Trash_Wheel)` variables, they are `r names(Mr_Trash_Wheel)`. 
 
-* The merged dataset Mr_and_Pro has `r nrow(Mr_and_Pro)` observations and `r ncol(Mr_and_Pro)` variables, they are `r names(Mr_and_Pro)`
+* `Pro_Trash_Wheel` has `r nrow(Pro_Trash_Wheel)` observations and `r ncol(Pro_Trash_Wheel)` variables, they are `r names(Pro_Trash_Wheel)`. 
+
+* The merged dataset called `Mr_and_Pro` has `r nrow(Mr_and_Pro)` observations and `r ncol(Mr_and_Pro)` variables, they are `r names(Mr_and_Pro)`
 
 * The total weight of trash collected by Professor Trash Wheel is `r total_weight` tons.  
 
@@ -170,10 +172,12 @@ merge = pols_snp %>% left_join(unemployment,by = c("year", "month"))
 
 * The `pols_month` dataset has `r nrow(pols_month)`observations with `r ncol(pols_month)` variables: `r names(pols_month)`. The range of year is [`r pols_month %>% pull(year) %>% range()`].
 
-* The `snp` dataset has has `r nrow(snp)`observations with `r ncol(snp)` variables: `r names(snp)`. The range of year is [`r snp%>%pull (year) %>% range()`].
+* The `snp` dataset has has `r nrow(snp)` observations with `r ncol(snp)` variables: `r names(snp)`. The range of year is [`r snp%>%pull (year) %>% range()`].
 
 * The `unemployment` dataset has has `r nrow(unemployment)`observations with `r ncol(unemployment)` variables: `r names(unemployment)`. The range of year is [`r unemployment%>%pull(year) %>% range()`].
 
-* First, using the left join to merge the snp dataset into pols_month, the new dataset has `r nrow(pols_snp)`observations and `r ncol(pols_snp)`variables,they are `r names(pols_snp)`. The range of year is [`r pols_snp %>% pull(year) %>% range()`]. Then, merging the `unemployment` dataset to `pols_snp`, It contains `r nrow(merge)`observations and `r ncol(merge)` variables:`r names(merge)`. The range of year is [`r merge %>% pull(year) %>% range()`].
+* First, using the left join to merge the snp dataset into pols_month, the new dataset called `pols_snp` has `r nrow(pols_snp)` observations and `r ncol(pols_snp)`variables,they are `r names(pols_snp)`. The range of year is [`r pols_snp %>% pull(year) %>% range()`]. 
+
+* Final dataset called `merge` which merging the `unemployment` dataset into `pols_snp`, It contains `r nrow(merge)` observations and `r ncol(merge)` variables:`r names(merge)`. The range of year is [`r merge %>% pull(year) %>% range()`].
 
 
